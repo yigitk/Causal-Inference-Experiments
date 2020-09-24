@@ -1,0 +1,542 @@
+import math
+import random
+from enum import Enum
+import numpy as np
+import array
+import random
+import numpy as np
+import pandas as pd
+import numbers
+import scipy
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import Lasso
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
+from phi import *
+import random
+import os
+from math import *
+from collections import namedtuple
+
+
+#
+# class pathType(Enum):
+#     LINEAR = 1
+#     ARC_CW = 2
+#     ARC_CCW = 3
+#
+#
+# class Path:
+#
+#     def __init__(self, slat, slon, elat, elon):
+#         self.slat = slat
+#         self.slon = slon
+#         self.elat = elat
+#         self.elon = elon
+#
+#
+# def distanceBetweenPoints(lat1, lat2, lon1, lon2):
+#     """ This function will calculate the difference between 2 points given their latitudes
+#     and longitudes in radians"""
+#
+#     return math.acos(math.sin(lat1)*math.sin(lat2) + math.cos(lat1)*math.cos(lat2)*math.cos(lon1-lon2))
+#
+#
+# def calcCourseBetweenPoints(lat1, lat2, lon1, lon2, dist):
+#     """ This function calculates the great circle course between 2 points given their latitudes
+#     and longitudes in radians, and the distance between the 2 points"""
+#
+#     sinlat1 = math.sin(lat1)
+#     sinlat2 = math.sin(lat2)
+#     coslat1 = math.cos(lat1)
+#     cosd = math.cos(dist)
+#     sind = math.sin(dist)
+#     num = sinlat2 - sinlat1 * cosd
+#     denom = sind * coslat1
+#     if math.fabs(denom) < 0.000001:
+#         denom = 0.000001
+#     crsTmp = math.acos(num / denom)
+#     pred = math.sin(lon2 - lon1) < 0
+#     if pred:
+#         return crsTmp
+#     else:
+#         return 2 * math.pi - crsTmp
+#
+#
+# def wrap2Pi(input):
+#     """ This function will wrap a value measured from the range of -pi to pi in radians to the range of 0 to 2pi"""
+#
+#     return math.fmod(input, 2 * math.pi)
+#
+#
+# def transitionFault(lat, lon, course, path):
+#     """ This function determines whether it is valid to transition off of a path"""
+#
+#     crsRdy = False
+#     posRdy = False
+#
+#     sLat = path.slat
+#     sLon = path.slon
+#     eLat = path.elat
+#     eLon = path.elon
+#     dist = distanceBetweenPoints(sLat, eLat, sLon, eLon)
+#
+#     tmpPathCourse = calcCourseBetweenPoints(sLat, eLat, sLon, eLon, dist)
+#     currCourse = wrap2Pi(course)
+#     pathCourse = wrap2Pi(tmpPathCourse)
+#
+#     crsDiff = currCourse - pathCourse  # Should be absolute valued
+#
+#     pred = crsDiff < 3.0
+#
+#     if pred:
+#         crsRdy = True
+#
+#     # determine which quadrant around current position the end of the path is; if
+#     # the end is "past" the current position (that is, the vehicle still has a little
+#     # bit to go until it reaches the end), transition will be false
+#
+#     # measuring equality with floats is not helpful, but just in case, want to cover the equal case
+#     pred1 = eLat >= lat and eLon >= lon
+#     pred2 = eLat >= lat and eLon <= lon
+#     pred3 = eLat <= lat and eLon >= lon
+#     pred4 = eLat <= lat and eLon <= lon
+#
+#     # determine quadrant of course; if none of these, it is in northwest quadrant. Since pathCourse is wrapped
+#     # between 0 and 360 degrees (0 and 2 pi), one of these must be true
+#     pred5 = pathCourse <= math.radians(90)
+#     pred6 = not pred5 and pathCourse <= math.radians(180)
+#     pred7 = not pred6 and not pred5 and pathCourse <= math.radians(270)
+#     pred8 = not pred7 and not pred6 and not pred5
+#
+#     # all conditions for position to be past the end of the path
+#     pred8 = pred1 and pred7 or \
+#             pred2 and pred6 or \
+#             pred3 and pred8 or \
+#             pred4 and pred5
+#
+#     if pred8:
+#         posRdy = True
+#
+#     return posRdy and crsRdy
+#
+#
+# def transition(lat, lon, course, path):
+#     """ This function determines whether it is valid to transition off of a path"""
+#
+#     crsRdy = False
+#     posRdy = False
+#
+#     sLat = path.slat
+#     sLon = path.slon
+#     eLat = path.elat
+#     eLon = path.elon
+#     dist = distanceBetweenPoints(sLat, eLat, sLon, eLon)
+#
+#     tmpPathCourse = calcCourseBetweenPoints(sLat, eLat, sLon, eLon, dist)
+#     currCourse = wrap2Pi(course)
+#     pathCourse = wrap2Pi(tmpPathCourse)
+#
+#     crsDiff = math.fabs(currCourse - pathCourse)  # Should be absolute valued - BUG
+#
+#     pred = crsDiff < 3.0
+#
+#     if pred:
+#         crsRdy = True
+#
+#     # determine which quadrant around current position the end of the path is; if
+#     # the end is "past" the current position (that is, the vehicle still has a little
+#     # bit to go until it reaches the end), transition will be false
+#
+#     # measuring equality with floats is not helpful, but just in case, want to cover the equal case
+#     pred1 = eLat >= lat and eLon >= lon
+#     pred2 = eLat >= lat and eLon <= lon
+#     pred3 = eLat <= lat and eLon >= lon
+#     pred4 = eLat <= lat and eLon <= lon
+#
+#     # determine quadrant of course; if none of these, it is in northwest quadrant. Since pathCourse is wrapped
+#     # between 0 and 360 degrees (0 and 2 pi), one of these must be true
+#     pred5 = pathCourse <= math.radians(90)
+#     pred6 = not pred5 and pathCourse <= math.radians(180)
+#     pred7 = not pred6 and not pred5 and pathCourse <= math.radians(270)
+#     pred8 = not pred7 and not pred6 and not pred5
+#
+#     # all conditions for position to be past the end of the path
+#     pred8 = pred1 and pred7 or \
+#             pred2 and pred6 or \
+#             pred3 and pred8 or \
+#             pred4 and pred5
+#
+#     if pred8:
+#         posRdy = True
+#
+#     return posRdy and crsRdy
+#
+
+class pathType(Enum):
+    LINEAR = 1
+    ARC_CW = 2
+    ARC_CCW = 3
+
+
+class Path:
+    def __init__(self, slat, slon, elat, elon):
+        slat_0 = slat;
+        slon_0 = slon;
+        elat_0 = elat;
+        elon_0 = elon;
+
+        self.slat = slat_0
+        self.slon = slon_0
+        self.elat = elat_0
+        self.elon = elon_0
+
+
+def distanceBetweenPoints(lat1, lat2, lon1, lon2):
+    lat1_0 = lat1;
+    lat2_0 = lat2;
+    lon1_0 = lon1;
+    lon2_0 = lon2;
+
+    """ This function will calculate the difference between 2 points given their latitudes
+    and longitudes in radians"""
+    return math.acos(
+        math.sin(lat1_0) * math.sin(lat2_0) + math.cos(lat1_0) * math.cos(lat2_0) * math.cos(lon1_0 - lon2_0))
+
+
+def calcCourseBetweenPoints(lat1, lat2, lon1, lon2, dist):
+    lat1_1 = lat1;
+    lat2_1 = lat2;
+    lon1_1 = lon1;
+    lon2_1 = lon2;
+    dist_0 = dist;
+    coslat1_0 = None;
+    num_0 = None;
+    sinlat1_0 = None;
+    sinlat2_0 = None;
+    cosd_0 = None;
+    pred_0 = None;
+    crsTmp_0 = None;
+    sind_0 = None;
+    denom_0 = None;
+    denom_1 = None;
+    denom_2 = None;
+
+    """ This function calculates the great circle course between 2 points given their latitudes
+    and longitudes in radians, and the distance between the 2 points"""
+    sinlat1_0 = math.sin(lat1_1)
+    sinlat2_0 = math.sin(lat2_1)
+    coslat1_0 = math.cos(lat1_1)
+    cosd_0 = math.cos(dist_0)
+    sind_0 = math.sin(dist_0)
+    num_0 = sinlat2_0 - sinlat1_0 * cosd_0
+    denom_0 = sind_0 * coslat1_0
+    if math.fabs(denom_0) < 0.000001:
+        denom_1 = 0.000001
+    phiPreds = [math.fabs(denom_0) < 0.000001]
+    phiNames = [denom_1, denom_0]
+    denom_2 = phiIf(phiPreds, phiNames)
+    crsTmp_0 = math.acos(num_0 / denom_2)
+    pred_0 = math.sin(lon2_1 - lon1_1) < 0
+    if pred_0:
+        return crsTmp_0
+    else:
+        return 2 * math.pi - crsTmp_0
+
+
+def wrap2Pi(input):
+    input_0 = input;
+
+    """ This function will wrap a value measured from the range of -pi to pi in radians to the range of 0 to 2pi"""
+    return math.fmod(input_0, 2 * math.pi)
+
+
+def transitionFault(lat, lon, course, path):
+    lat_0 = lat;
+    lon_0 = lon;
+    course_0 = course;
+    path_0 = path;
+    posRdy_0 = None;
+    posRdy_1 = None;
+    posRdy_2 = None;
+    pathCourse_0 = None;
+    crsRdy_0 = None;
+    crsRdy_1 = None;
+    crsRdy_2 = None;
+    pred8_0 = None;
+    pred8_1 = None;
+    eLon_0 = None;
+    dist_1 = None;
+    pred7_0 = None;
+    pred6_0 = None;
+    pred5_0 = None;
+    currCourse_0 = None;
+    pred4_0 = None;
+    sLon_0 = None;
+    pred3_0 = None;
+    pred2_0 = None;
+    crsDiff_0 = None;
+    pred1_0 = None;
+    eLat_0 = None;
+    pred_1 = None;
+    sLat_0 = None;
+    tmpPathCourse_0 = None;
+
+    """ This function determines whether it is valid to transition off of a path"""
+    crsRdy_0 = False
+    posRdy_0 = False
+    sLat_0 = path_0.slat
+    sLon_0 = path_0.slon
+    eLat_0 = path_0.elat
+    eLon_0 = path_0.elon
+    dist_1 = distanceBetweenPoints(sLat_0, eLat_0, sLon_0, eLon_0)
+    tmpPathCourse_0 = calcCourseBetweenPoints(sLat_0, eLat_0, sLon_0, eLon_0, dist_1)
+    currCourse_0 = wrap2Pi(course_0)
+    pathCourse_0 = wrap2Pi(tmpPathCourse_0)
+    #crsDiff_0 = currCourse_0 - pathCourse_0
+    pred_1 = currCourse_0 - pathCourse_0 < 1.0 #BUG
+    if pred_1:
+        crsRdy_1 = True
+    phiPreds = [pred_1]
+    phiNames = [crsRdy_1, crsRdy_0]
+    crsRdy_2 = phiIf(phiPreds, phiNames)
+    pred1_0 = eLat_0 >= lat_0 and eLon_0 >= lon_0
+    pred2_0 = eLat_0 >= lat_0 and eLon_0 <= lon_0
+    pred3_0 = eLat_0 <= lat_0 and eLon_0 >= lon_0
+    pred4_0 = eLat_0 <= lat_0 and eLon_0 <= lon_0
+    pred5_0 = pathCourse_0 <= math.radians(90)
+    pred6_0 = not pred5_0 and pathCourse_0 <= math.radians(180)
+    pred7_0 = not pred6_0 and not pred5_0 and pathCourse_0 <= math.radians(270)
+    pred8_0 = not pred7_0 and not pred6_0 and not pred5_0
+    pred8_1 = pred1_0 and pred7_0 or pred2_0 and pred6_0 or pred3_0 and pred8_0 or pred4_0 and pred5_0
+    if pred8_1:
+        posRdy_1 = True
+    phiPreds = [pred8_1]
+    phiNames = [posRdy_1, posRdy_0]
+    posRdy_2 = phiIf(phiPreds, phiNames)
+    lo = locals()
+    record_locals(lo, test_counter)
+    return  crsRdy_2
+
+
+def transition(lat, lon, course, path):
+    lat_1 = lat;
+    lon_1 = lon;
+    course_1 = course;
+    path_1 = path;
+    posRdy_3 = None;
+    posRdy_4 = None;
+    posRdy_5 = None;
+    pathCourse_1 = None;
+    crsRdy_3 = None;
+    crsRdy_4 = None;
+    crsRdy_5 = None;
+    pred8_2 = None;
+    pred8_3 = None;
+    eLon_1 = None;
+    dist_2 = None;
+    pred7_1 = None;
+    pred6_1 = None;
+    pred5_1 = None;
+    currCourse_1 = None;
+    pred4_1 = None;
+    sLon_1 = None;
+    pred3_1 = None;
+    pred2_1 = None;
+    crsDiff_1 = None;
+    pred1_1 = None;
+    eLat_1 = None;
+    pred_2 = None;
+    sLat_1 = None;
+    tmpPathCourse_1 = None;
+
+    """ This function determines whether it is valid to transition off of a path"""
+    crsRdy_3 = False
+    posRdy_3 = False
+    sLat_1 = path_1.slat
+    sLon_1 = path_1.slon
+    eLat_1 = path_1.elat
+    eLon_1 = path_1.elon
+    dist_2 = distanceBetweenPoints(sLat_1, eLat_1, sLon_1, eLon_1)
+    tmpPathCourse_1 = calcCourseBetweenPoints(sLat_1, eLat_1, sLon_1, eLon_1, dist_2)
+    currCourse_1 = wrap2Pi(course_1)
+    pathCourse_1 = wrap2Pi(tmpPathCourse_1)
+    crsDiff_1 = math.fabs(currCourse_1 - pathCourse_1)
+    pred_2 = crsDiff_1 < 1.0
+    if pred_2:
+        crsRdy_4 = True
+    phiPreds = [pred_2]
+    phiNames = [crsRdy_4, crsRdy_3]
+    crsRdy_5 = phiIf(phiPreds, phiNames)
+    pred1_1 = eLat_1 >= lat_1 and eLon_1 >= lon_1
+    pred2_1 = eLat_1 >= lat_1 and eLon_1 <= lon_1
+    pred3_1 = eLat_1 <= lat_1 and eLon_1 >= lon_1
+    pred4_1 = eLat_1 <= lat_1 and eLon_1 <= lon_1
+    pred5_1 = pathCourse_1 <= math.radians(90)
+    pred6_1 = not pred5_1 and pathCourse_1 <= math.radians(180)
+    pred7_1 = not pred6_1 and not pred5_1 and pathCourse_1 <= math.radians(270)
+    pred8_2 = not pred7_1 and not pred6_1 and not pred5_1
+    pred8_3 = pred1_1 and pred7_1 or pred2_1 and pred6_1 or pred3_1 and pred8_2 or pred4_1 and pred5_1
+    if pred8_3:
+        posRdy_4 = True
+    phiPreds = [pred8_3]
+    phiNames = [posRdy_4, posRdy_3]
+    posRdy_5 = phiIf(phiPreds, phiNames)
+    return  crsRdy_5
+
+
+# generate python causal map
+causal_map = {'pred_2': ['crsDiff_1'], 'sind_0': ['dist_0'], 'pred_0': ['lon2_1', 'lon1_1'],
+              'pred_1': ['currCourse_0', 'pathCourse_0'], 'pathCourse_1': ['tmpPathCourse_1'],
+              'pathCourse_0': ['tmpPathCourse_0'], 'currCourse_0': ['course_0'], 'currCourse_1': ['course_1'],
+              'denom_2': ['denom_1', 'denom_0', 'denom_0'], 'denom_0': ['sind_0', 'coslat1_0'], 'denom_1': [],
+              'pred7_1': ['pred6_1', 'pred5_1', 'pathCourse_1'], 'pred7_0': ['pred6_0', 'pred5_0', 'pathCourse_0'],
+              'pred5_1': ['pathCourse_1'], 'pred5_0': ['pathCourse_0'], 'eLat_1': ['path_1'],
+              'pred3_1': ['eLat_1', 'lat_1', 'eLon_1', 'lon_1'], 'pred3_0': ['eLat_0', 'lat_0', 'eLon_0', 'lon_0'],
+              'eLat_0': ['path_0'], 'pred1_1': ['eLat_1', 'lat_1', 'eLon_1', 'lon_1'],
+              'pred1_0': ['eLat_0', 'lat_0', 'eLon_0', 'lon_0'], 'sinlat1_0': ['lat1_1'], 'sLon_0': ['path_0'],
+              'sLon_1': ['path_1'], 'crsTmp_0': ['num_0', 'denom_2'], 'coslat1_0': ['lat1_1'], 'posRdy_3': [],
+              'posRdy_2': ['posRdy_1', 'posRdy_0', 'pred8_1'], 'posRdy_1': [], 'posRdy_0': [], 'sLat_1': ['path_1'],
+              'sLat_0': ['path_0'], 'posRdy_5': ['posRdy_4', 'posRdy_3', 'pred8_3'], 'posRdy_4': [],
+              'crsDiff_0': ['currCourse_0', 'pathCourse_0'], 'crsDiff_1': ['currCourse_1', 'pathCourse_1'],
+              'pred8_3': ['pred1_1', 'pred7_1', 'pred2_1', 'pred6_1', 'pred3_1', 'pred8_2', 'pred4_1', 'pred5_1'],
+              'pred8_2': ['pred7_1', 'pred6_1', 'pred5_1'],
+              'pred8_1': ['pred1_0', 'pred7_0', 'pred2_0', 'pred6_0', 'pred3_0', 'pred8_0', 'pred4_0', 'pred5_0'],
+              'pred8_0': ['pred7_0', 'pred6_0', 'pred5_0'], 'pred6_1': ['pred5_1', 'pathCourse_1'],
+              'pred6_0': ['pred5_0', 'pathCourse_0'],
+              'tmpPathCourse_1': ['sLat_1', 'eLat_1', 'sLon_1', 'eLon_1', 'dist_2'],
+              'pred4_1': ['eLat_1', 'lat_1', 'eLon_1', 'lon_1'],
+              'tmpPathCourse_0': ['sLat_0', 'eLat_0', 'sLon_0', 'eLon_0', 'dist_1'],
+              'pred4_0': ['eLat_0', 'lat_0', 'eLon_0', 'lon_0'], 'pred2_1': ['eLat_1', 'lat_1', 'eLon_1', 'lon_1'],
+              'pred2_0': ['eLat_0', 'lat_0', 'eLon_0', 'lon_0'], 'sinlat2_0': ['lat2_1'], 'eLon_1': ['path_1'],
+              'eLon_0': ['path_0'], 'cosd_0': ['dist_0'], 'crsRdy_4': [], 'num_0': ['sinlat2_0', 'sinlat1_0', 'cosd_0'],
+              'crsRdy_5': ['crsRdy_4', 'crsRdy_3', 'pred_2'], 'dist_1': ['sLat_0', 'eLat_0', 'sLon_0', 'eLon_0'],
+              'dist_2': ['sLat_1', 'eLat_1', 'sLon_1', 'eLon_1'], 'crsRdy_2': ['crsRdy_1', 'crsRdy_0', 'pred_1'],
+              'crsRdy_3': [], 'crsRdy_0': [], 'crsRdy_1': [], }
+
+# added phi names
+phi_names_set = {'denom_2', 'crsRdy_2', 'posRdy_2', 'crsRdy_5', 'posRdy_5', }
+d = {}
+f = {}
+diffCnt = 0
+global_value_dict = {}
+test_counter = 0
+
+def record_locals(lo, i):
+    for name in lo:
+        if '_IV' in name:
+            continue
+        if isinstance(lo[name], numbers.Number) and name in causal_map:
+            if name not in global_value_dict:
+                columns = causal_map[name].copy()
+                columns.insert(0, name)
+                global_value_dict[name] = pd.DataFrame(columns=columns)
+            new_row = [np.float64(lo[name])]
+
+            for pa in causal_map[name]:
+                if isinstance(lo[pa], numbers.Number):
+                    new_row.append(np.float64(lo[pa]))
+                else:
+                    new_row.append(lo[pa])
+            global_value_dict[name].loc[i] = new_row
+
+
+for i in range(1, 1000):
+
+    # attempt to keep paths in a small area; in this case, used approximate coordinates of New York City
+    slat = random.uniform(math.radians(40.5), math.radians(41.0))
+    elat = random.uniform(math.radians(40.5), math.radians(41.0))
+    slon = random.uniform(math.radians(-73.5), math.radians(-73.0))
+    elon = random.uniform(math.radians(-73.5), math.radians(-73.0))
+    currlat = random.uniform(math.radians(40.5), math.radians(41.0))
+    currlon = random.uniform(math.radians(-73.5), math.radians(-73.0))
+    currCourse = random.uniform(-math.pi, math.pi)
+
+    p = Path(slat, slon, elat, elon)
+
+    d[i] = transition(currlat, currlon, currCourse, p)
+    f[i] = transitionFault(currlat, currlon, currCourse, p)
+    test_counter += 1
+    if d[i] != f[i]:
+        diffCnt += 1
+
+diff_dict = {index: 0.0 if f[index] == d[index] else 1.0 for index in d}
+
+print(diff_dict)
+print(diffCnt)
+
+
+for key in global_value_dict:
+    rows = global_value_dict[key].index + 1
+    outcome_list = [diff_dict[i] for i in rows]
+    global_value_dict[key]['outcome'] = outcome_list
+
+
+def get_quantiled_tr(W):
+    # 10 quantiles from 0.05 to 0.95
+    quantile_list = []
+    for i in np.arange(0.05, 1.05, 0.1):
+        quantile_list.append(W.quantile(i))
+    return quantile_list
+
+
+def predict_causal_risk_list(train_set_X, quantiles, model):
+    risk_list = []
+    print(train_set_X.columns[0] + " being treatment...")
+    X_with_quantile = train_set_X.drop(train_set_X.columns[0], axis=1)
+
+    for quantile in quantiles:
+        X_with_quantile.insert(loc=0, column=train_set_X.columns[0],
+                               value=np.full((len(X_with_quantile), 1), quantile))
+        # X_with_quantile[train_set_X.columns[col_index_todrop]] = np.full((len(X_with_quantile), 1), quantile)
+        # print(X_with_quantile.describe())
+        risk_list.append(model.predict(X_with_quantile).mean())
+        X_with_quantile = X_with_quantile.drop(train_set_X.columns[0], axis=1)
+    return risk_list
+
+
+def suspicious_ranking(global_value_dict, model_to_use):
+    suspicious_df = pd.DataFrame(columns=['variable_name', 'max_risk_diff', 'quantile1', 'quantile2'])
+    for name in global_value_dict:
+        if name in phi_names_set:
+            continue
+
+        # df cleaning
+        # df = global_value_dict[name].select_dtypes(include=[np.number]).dropna(axis=1, how='all')
+        df = global_value_dict[name].select_dtypes(include=[np.number]).dropna(axis=1, how='any')
+        train_set = df
+        # train_set, test_set = train_test_split(df, test_size=0.2, random_state=42)
+        train_set_X = train_set.drop(['outcome'], axis=1)
+        train_set_Y = train_set['outcome']
+        if model_to_use == 0:
+            model = RandomForestClassifier(n_estimators=500, max_leaf_nodes=16, n_jobs=-1)
+        if model_to_use == 1:
+            model = Lasso(alpha=0.1)
+
+        model.fit(train_set_X, train_set_Y)
+
+        W = df.iloc[:, 0].to_frame()
+        with open('.' + '/' + str(name) + ".txt",
+                  "w") as f1:
+            f1.write(str(train_set_X.to_csv(sep=' ', mode='a')))
+        quantiles = get_quantiled_tr(W)
+        risk_list = predict_causal_risk_list(train_set_X, quantiles, model)
+        max_risk = max(risk_list)
+        min_risk = min(risk_list)
+        row = [df.columns[0], max_risk - min_risk, risk_list.index(max_risk),
+               risk_list.index(min_risk)]
+        suspicious_df.loc[len(suspicious_df)] = row
+    suspicious_df = suspicious_df.sort_values(by='max_risk_diff', ascending=False)
+    return filter_phi_rows(suspicious_df, phi_names_set)
+
+
+def filter_phi_rows(suspicious_df, phi_names_set):
+    return suspicious_df[~suspicious_df['variable_name'].isin(phi_names_set)]
+
+
+# 0-> random forest  1 -> lasso
+result = suspicious_ranking(global_value_dict, 0)
+pd.set_option("display.precision", 8)
+print('*************Target variables in total: ', len(result), '*************')
+print(result)

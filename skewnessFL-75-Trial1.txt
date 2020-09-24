@@ -1,0 +1,17 @@
+*************Target variables in total: 13*************
+Number of Fault Insertions: 736
+Number of Faulty Executions: 736
+,variable_name,max_risk_diff,quantile1,quantile2
+10,skewness_0,0.16000000000000003,0,7
+5,variance_4,0.09999999999999998,9,2
+12,sd_2,0.08299999999999996,9,2
+2,delta_0,0.06599999999999995,0,7
+0,mean_1,0.04300000000000004,3,0
+9,x_0,0.031000000000000028,9,7
+7,skew_1,0.02100000000000002,0,6
+3,variance_1,0.010000000000000009,9,5
+1,mean_0,0.0,0,0
+4,variance_0,0.0,0,0
+6,sd_0,0.0,0,0
+8,skew_0,0.0,0,0
+11,mean_7,0.0,0,0

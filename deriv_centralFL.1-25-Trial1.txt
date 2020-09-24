@@ -1,0 +1,32 @@
+*************Target variables in total: 28*************
+Number of Fault Insertions: 242
+Number of Faulty Executions: 242
+,variable_name,max_risk_diff,quantile1,quantile2
+24,error_1,0.696,0,4
+22,abserr_0,0.03,3,5
+23,result_3,0.004,8,0
+0,fph_0,0.0,0,0
+1,abserr_round_1,0.0,0,0
+26,r_0_1,0.0,0,0
+25,error_0,0.0,0,0
+21,round_0,0.0,0,0
+20,round_1,0.0,0,0
+19,trunc_0,0.0,0,0
+18,trunc_1,0.0,0,0
+17,r_opt_0,0.0,0,0
+16,error_opt_0,0.0,0,0
+15,error_opt_1,0.0,0,0
+14,trunc_opt_0,0.0,0,0
+13,round_opt_0,0.0,0,0
+12,h_opt_0,0.0,0,0
+11,fmh_0,0.0,0,0
+10,r3_0,0.0,0,0
+9,r5_0,0.0,0,0
+8,fp1_0,0.0,0,0
+7,fm1_0,0.0,0,0
+6,e3_0,0.0,0,0
+5,result_1,0.0,0,0
+4,e5_0,0.0,0,0
+3,dy_0,0.0,0,0
+2,abserr_trunc_1,0.0,0,0
+27,r_0_0,0.0,0,0
